@@ -1,0 +1,291 @@
+// LocalizaCar Frotas - modelo de dados
+// Datas sao gravadas como texto "AAAA-MM-DD" (ou "AAAA-MM-DDTHH:MM" em data e hora).
+// Para usar PostgreSQL, troque o provider para "postgresql" e ajuste DATABASE_URL no .env.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  perfil    String   @default("OPERADOR") // ADMIN | GESTOR | OPERADOR
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+}
+
+model Veiculo {
+  id                   String  @id @default(cuid())
+  placa                String  @unique
+  marca                String
+  modelo               String
+  ano                  Int?
+  tipo                 String?
+  cor                  String?
+  combustivel          String?
+  renavam              String?
+  chassi               String?
+  km                   Int     @default(0)
+  status               String  @default("Disponível") // Disponível | Em uso | Manutenção | Inativo
+  documentacao         String  @default("OK") // OK | Pendente
+  licenciamento        String?
+  seguro               String?
+  motoristaAtualId     String?
+  obs                  String?
+  criadoEm             DateTime @default(now())
+  atualizadoEm         DateTime @updatedAt
+}
+
+model Motorista {
+  id          String  @id @default(cuid())
+  nome        String
+  cpf         String?
+  rg          String?
+  telefone    String?
+  endereco    String?
+  cidade      String?
+  uf          String?
+  cnh         String
+  categoria   String?
+  validadeCnh String
+  aptidao     String  @default("Apto") // Apto | Inapto
+  status      String  @default("Ativo") // Ativo | Inativo
+  obs         String?
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Fornecedor {
+  id       String  @id @default(cuid())
+  nome     String
+  tipo     String
+  cnpj     String?
+  contato  String?
+  telefone String?
+  cidade   String?
+  obs      String?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Cliente {
+  id        String  @id @default(cuid())
+  nome      String
+  documento String?
+  contato   String?
+  telefone  String?
+  endereco  String?
+  cidade    String?
+  uf        String?
+  obs       String?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Movimento {
+  id          String  @id @default(cuid())
+  tipo        String  // Saída | Entrada
+  dataHora    String
+  veiculoId   String
+  motoristaId String
+  km          Int
+  combustivel String?
+  destino     String?
+  obs         String?
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model PlanoManutencao {
+  id            String  @id @default(cuid())
+  veiculoId     String
+  servico       String
+  intervaloKm   Int?
+  intervaloDias Int?
+  ultimaData    String?
+  ultimaKm      Int?
+  obs           String?
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+}
+
+model OrdemServico {
+  id            String  @id @default(cuid())
+  numero        Int     @unique
+  veiculoId     String
+  tipo          String  @default("Corretiva") // Preventiva | Corretiva | Preditiva | Sinistro
+  prioridade    String  @default("Média") // Alta | Média | Baixa
+  fornecedorId  String?
+  status        String  @default("Aberta")
+  agendadaPara  String?
+  abertura      String
+  previsao      String?
+  conclusao     String?
+  km            Int?
+  solicitante   String?
+  responsavel   String?
+  descricao     String
+  correcao      String?
+  valorPrevisto Float?
+  itens         String  @default("[]") // JSON: [{desc, tipo, qtd, valor}]
+  planoId       String?
+  obs           String?
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+}
+
+model Abastecimento {
+  id           String  @id @default(cuid())
+  veiculoId    String
+  motoristaId  String?
+  fornecedorId String?
+  data         String
+  combustivel  String?
+  km           Int
+  litros       Float
+  valor        Float
+  tanque       String? // Cheio | Suficiente | Não suficiente
+  obs          String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Pneu {
+  id              String  @id @default(cuid())
+  codigo          String  @unique // numero de fogo
+  marca           String
+  modelo          String?
+  medida          String?
+  dot             String? // semana/ano de fabricacao, ex.: 2324
+  validade        String?
+  valor           Float?
+  status          String  @default("Estoque") // Em uso | Estoque | Recapagem | Descartado
+  veiculoId       String?
+  posicao         String?
+  sulcoInicial    Float?
+  sulcoAtual      Float?
+  kmInstalacao    Int?
+  kmAcumulado     Int     @default(0)
+  recapagens      Int     @default(0)
+  custoRecapagens Float   @default(0)
+  obs             String?
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+}
+
+model ServicoPneu {
+  id          String  @id @default(cuid())
+  pneuId      String
+  veiculoId   String?
+  data        String
+  tipo        String  // Recapagem | Conserto | Rodízio | Calibragem | Alinhamento e balanceamento | Troca
+  classe      String  @default("Preventiva")
+  fornecedorId String?
+  descricao   String?
+  custo       Float   @default(0)
+  status      String  @default("Concluído") // Pendente | Em andamento | Concluído | Cancelado
+  aplicado    Boolean @default(false) // recapagem ja somada ao pneu
+  obs         String?
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model InspecaoPneu {
+  id          String  @id @default(cuid())
+  data        String
+  veiculoId   String
+  motoristaId String?
+  itens       String  @default("[]") // JSON: [{item, conforme, obs}]
+  resultado   String  @default("Conforme")
+  naoConformes Int    @default(0)
+  obs         String?
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Pedido {
+  id          String  @id @default(cuid())
+  codigo      String  @unique
+  clienteId   String
+  descricao   String
+  quantidade  Int     @default(1)
+  endereco    String?
+  contato     String?
+  dataSaida   String?
+  prazo       String?
+  dataEntrega String?
+  status      String  @default("Pendente") // Pendente | Em transporte | Entregue | Entregue com atraso | Não entregue
+  obs         String?
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Entrega {
+  id          String  @id @default(cuid())
+  data        String
+  motoristaId String
+  veiculoId   String
+  clienteId   String?
+  pedidoId    String?
+  origem      String?
+  ufOrigem    String?
+  destino     String
+  ufDestino   String?
+  produto     String?
+  qtdProdutos Int?
+  kmRodados   Int?
+  prazo       String?
+  dataEntrega String?
+  status      String  @default("Em andamento") // Programada | Em andamento | Realizada | Realizada com atraso | Não realizada
+  obs         String?
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model Frete {
+  id             String  @id @default(cuid())
+  data           String
+  clienteId      String?
+  veiculoId      String
+  motoristaId    String?
+  mercadoria     String
+  quantidade     Float?
+  pesoT          Float?
+  valorMercadoria Float?
+  origem         String?
+  ufOrigem       String?
+  destino        String?
+  ufDestino      String?
+  valorFrete     Float   @default(0)
+  despCombustivel Float  @default(0)
+  despPedagio    Float   @default(0)
+  despOutras     Float   @default(0)
+  lucro          Float   @default(0)
+  status         String  @default("Pendente") // Pendente | Em andamento | Concluída | Cancelada
+  obs            String?
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+}
+
+model Lancamento {
+  id            String  @id @default(cuid())
+  data          String
+  tipo          String  // Receita | Despesa
+  categoria     String
+  descricao     String
+  valor         Float
+  vencimento    String?
+  pago          Boolean @default(false)
+  dataPagamento String?
+  veiculoId     String?
+  obs           String?
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+}
